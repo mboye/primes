@@ -42,6 +42,7 @@ func main() {
 
 	primeHandler := handler.NewPrimeHandler(checker)
 	http.Handle("/api/isPrime", primeHandler)
+	http.Handle("/health/", handler.NewHealthHandler())
 
 	logger.WithField("port", *port).Info("Starting server")
 	err := http.ListenAndServe(":8080", nil)

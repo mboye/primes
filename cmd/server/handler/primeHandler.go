@@ -43,7 +43,11 @@ func (h *primeHandler) incrementCounter(statusCode int) {
 }
 
 func (h *primeHandler) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
-	logger := log.WithFields(log.Fields{"method": req.Method, "path": req.URL.Path})
+	logger := log.WithFields(
+		log.Fields{
+			"method":     req.Method,
+			"path":       req.URL.Path,
+			"user-agent": req.UserAgent()})
 
 	if req.Method != "GET" {
 		logger.Warn("Bad HTTP method")
