@@ -1,8 +1,8 @@
 VERSION=latest
-TAG=mboye/primes-server:$(VERSION)
+TAG=mboye/primes-backend:$(VERSION)
 
 cmd:
-	GOOS=linux go build -o primes-server .
+	GOOS=linux go build -o primes-backend .
 
 image: cmd
 	docker build -t $(TAG) .
@@ -13,5 +13,8 @@ run: image
 push: image
 	docker push $(TAG)
 
-.PHONY: cmd
+clean:
+	rm -f primes-backend
+
+.PHONY: cmd clean
 

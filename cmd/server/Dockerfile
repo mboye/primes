@@ -1,8 +1,8 @@
 FROM alpine:latest
 
 WORKDIR /app
-ADD primes-server primes-server
+ADD primes-backend primes-backend
 
-ENTRYPOINT /app/primes-server
-CMD /app/primes-server
+ENTRYPOINT /app/primes-backend
+CMD /app/primes-backend
 EXPOSE 8080 9095
