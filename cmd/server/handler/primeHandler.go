@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/mboye/primes"
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,15 +12,24 @@ import (
 )
 
 type primeHandler struct {
-	checker  primes.Checker
-	counters map[int]prometheus.Counter
+	checker             primes.Checker
+	counters            map[int]prometheus.Counter
+	responseTimeCounter prometheus.Counter
 }
 
 // NewPrimeHandler created a new HTTP request handler for checking if a number is a prime
 func NewPrimeHandler(checker primes.Checker) http.Handler {
-	return &primeHandler{
+	handler := &primeHandler{
 		checker:  checker,
-		counters: make(map[int]prometheus.Counter)}
+		counters: make(map[int]prometheus.Counter),
+		responseTimeCounter: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Help:        "Response time of successful requests",
+				Name:        "http_response_time_nanos",
+				ConstLabels: map[string]string{"status_code": "200"}})}
+
+	prometheus.Register(handler.responseTimeCounter)
+	return handler
 }
 
 func (h *primeHandler) getCounter(statusCode int) prometheus.Counter {
@@ -43,6 +53,8 @@ func (h *primeHandler) incrementCounter(statusCode int) {
 }
 
 func (h *primeHandler) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
+	start := time.Now()
+
 	logger := log.WithFields(
 		log.Fields{
 			"method":     req.Method,
@@ -87,7 +99,13 @@ func (h *primeHandler) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		logger.Errorf("Failed to write response: %s", err.Error())
 	} else {
-		logger.WithFields(log.Fields{"value": value, "isPrime": isPrime}).Info("Processed request")
+		stop := time.Now()
+		duration := stop.Sub(start)
+		nanos := duration.Nanoseconds()
+
+		logger.WithFields(log.Fields{"value": value, "isPrime": isPrime, "duration": duration}).Info("Processed request")
+
 		h.incrementCounter(200)
+		h.responseTimeCounter.Add(float64(nanos))
 	}
 }
